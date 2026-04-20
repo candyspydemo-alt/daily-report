@@ -5,44 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>三大法人每日報告</title>
   <style>
-    body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 600px; margin: auto; }
-    h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
-    .data-item { font-size: 1.2rem; margin: 10px 0; }
-    .positive { color: #d20000; } /* 台股習慣：正數紅 */
-    .negative { color: #008800; } /* 台股習慣：負數綠 */
-    #date { color: #666; }
+    body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 500px; margin: auto; background-color: #f4f7f6; }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .data-row { display: flex; justify-content: space-between; font-size: 1.1rem; margin: 15px 0; }
+    .label { color: #7f8c8d; }
+    .positive { color: #d20000; font-weight: bold; }
+    .negative { color: #008800; font-weight: bold; }
+    .total-row { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #eee; font-size: 1.3rem; font-weight: bold; }
+    #date-display { color: #95a5a6; font-size: 0.9rem; margin-bottom: 20px; }
   </style>
 </head>
 <body>
-  <h1>📊 三大法人買賣超日報</h1>
-
-  <div id="date" class="data-item">讀取中...</div>
-  <div id="foreign" class="data-item"></div>
-  <div id="investment" class="data-item"></div>
-  <div id="dealer" class="data-item"></div>
-  <hr>
-  <div id="total" class="data-item" style="font-weight: bold; font-size: 1.5rem;"></div>
+  <div class="card">
+    <h2>📊 三大法人買賣金額</h2>
+    <div id="date-display">讀取中...</div>
+    
+    <div id="content">
+      </div>
+  </div>
 
   <script>
-    // 加上 ?v= 時間戳記，強迫瀏覽器每次都抓最新 json，不讀舊快取
+    // 使用時間戳記避免快取
     fetch('data.json?v=' + new Date().getTime())
       .then(res => res.json())
       .then(data => {
-// 把原本那行註解掉
- document.getElementById('date').innerText = "📅 報告日期：" + data.date;
-
-// 強制顯示 4/17
-//document.getElementById('date').innerText = "📅 報告日期：2026-04-17 (測試中)";
-        document.getElementById('foreign').innerHTML = `外資：<span class="${data.foreign >= 0 ? 'positive' : 'negative'}">${data.foreign} 億</span>`;
-        document.getElementById('investment').innerHTML = `投信：<span class="${data.investment >= 0 ? 'positive' : 'negative'}">${data.investment} 億</span>`;
-        document.getElementById('dealer').innerHTML = `自營商：<span class="${data.dealer >= 0 ? 'positive' : 'negative'}">${data.dealer} 億</span>`;
+        // ✅ 核心修正：顯示資料夾帶的 date 欄位，而不是今天的日期
+        document.getElementById('date-display').innerText = "📅 資料日期：" + data.date;
         
-        const totalVal = data.total;
-        document.getElementById('total').innerHTML = `總計：<span class="${totalVal >= 0 ? 'positive' : 'negative'}">${totalVal} 億</span>`;
+        const format = (val) => {
+          const colorClass = val >= 0 ? 'positive' : 'negative';
+          const prefix = val >= 0 ? '+' : '';
+          return `<span class="${colorClass}">${prefix}${val} 億</span>`;
+        };
+
+        document.getElementById('content').innerHTML = `
+          <div class="data-row"><span class="label">外資買賣超</span> ${format(data.foreign)}</div>
+          <div class="data-row"><span class="label">投信買賣超</span> ${format(data.investment)}</div>
+          <div class="data-row"><span class="label">自營商買賣超</span> ${format(data.dealer)}</div>
+          <div class="total-row data-row"><span class="label" style="color:#2c3e50">三大法人合計</span> ${format(data.total)}</div>
+        `;
       })
       .catch(err => {
-        document.getElementById('date').innerText = "⚠️ 今日資料尚未更新或讀取失敗";
-        console.error(err);
+        document.getElementById('date-display').innerText = "⚠️ 無法取得今日資料";
       });
   </script>
 </body>

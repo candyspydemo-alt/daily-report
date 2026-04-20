@@ -29,10 +29,10 @@
       .then(res => res.json())
       .then(data => {
 // 把原本那行註解掉
-// document.getElementById('date').innerText = "📅 報告日期：" + data.date;
+ document.getElementById('date').innerText = "📅 報告日期：" + data.date;
 
 // 強制顯示 4/17
-document.getElementById('date').innerText = "📅 報告日期：2026-04-17 (測試中)";
+//document.getElementById('date').innerText = "📅 報告日期：2026-04-17 (測試中)";
         document.getElementById('foreign').innerHTML = `外資：<span class="${data.foreign >= 0 ? 'positive' : 'negative'}">${data.foreign} 億</span>`;
         document.getElementById('investment').innerHTML = `投信：<span class="${data.investment >= 0 ? 'positive' : 'negative'}">${data.investment} 億</span>`;
         document.getElementById('dealer').innerHTML = `自營商：<span class="${data.dealer >= 0 ? 'positive' : 'negative'}">${data.dealer} 億</span>`;

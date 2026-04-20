@@ -8,8 +8,14 @@ headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
-# 2. 取得今日日期
-today = datetime.now().strftime("%Y%m%d")
+# 2. 取得今日日期 (先把原本這行註解掉，前面加個 #)
+# today = datetime.now().strftime("%Y%m%d")
+
+# 手動指定為 17 號進行測試
+today = "20260417"
+
+
+
 url = f"https://www.twse.com.tw/rwd/zh/fund/T86?date={today}&selectType=ALL&response=json"
 
 try:

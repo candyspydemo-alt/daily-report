@@ -10,7 +10,7 @@ headers = {
 
 # 2. 取得日期 (測試時可手動改成 "20260417")
 today = datetime.now().strftime("%Y%m%d")
-# today = "20260417" # 測試完記得註解掉這一行，恢復上面那行
+
 
 # 💡 關鍵修正：改用 BFI82U API (三大法人買賣金額統計)
 url = f"https://www.twse.com.tw/rwd/zh/fund/BFI82U?date={today}&response=json"

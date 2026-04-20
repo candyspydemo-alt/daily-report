@@ -6,13 +6,13 @@ on:
   workflow_dispatch:      # 讓你可以手動點擊執行測試
 
 permissions:
-  contents: write         # 必須有這個才能推播 data.json 回倉庫
+  contents: write         # 允許 Action 推播 data.json 回倉庫
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 強制使用 Node 24 消除警告
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 消除 Node.js 20 棄用警告
 
     steps:
       - name: Checkout
@@ -27,6 +27,10 @@ jobs:
         run: pip install requests
 
       - name: Run script
+        env:
+          # 💡 重要：將你設定的 Secrets 傳遞給 fetch.py 使用
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: python fetch.py
 
       - name: Commit & push

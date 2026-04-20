@@ -2,19 +2,17 @@ name: Daily Stock Fetch
 
 on:
   schedule:
-    - cron: '30 7 * * 1-5'
-  workflow_dispatch:
+    - cron: '30 7 * * 1-5'  # 台灣時間 15:30 執行
+  workflow_dispatch:      # 讓你可以手動點擊執行測試
 
 permissions:
-  contents: write
+  contents: write         # 必須有這個才能推播 data.json 回倉庫
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    
-    # 💡 加入這段環境變數，強制指定使用 Node.js 24，警告就會消失
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 強制使用 Node 24 消除警告
 
     steps:
       - name: Checkout
@@ -25,7 +23,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install requests
+      - name: Install dependencies
         run: pip install requests
 
       - name: Run script
@@ -34,7 +32,7 @@ jobs:
       - name: Commit & push
         run: |
           git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json
-          git commit -m "update data: $(date +'%Y-%m-%d')" || exit 0
+          git commit -m "自動更新今日籌碼: $(date +'%Y-%m-%d')" || exit 0
           git push

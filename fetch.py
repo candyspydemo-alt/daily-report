@@ -1,6 +1,7 @@
 import requests
 import json
 from datetime import datetime
+import os
 
 # 1. 設定 Header 模擬瀏覽器，防止被證交所阻擋
 headers = {
@@ -57,5 +58,55 @@ try:
     print(f"✅ 處理完成，已更新 data.json: {result}")
 except Exception as e:
     print(f"❌ 檔案寫入失敗: {e}")
+
+# --- 8. 新增：LINE Messaging API 發送功能 ---
+def send_line_push(result_data):
+    token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+    user_id = os.getenv("LINE_USER_ID")
+    
+    if not token or not user_id:
+        print("⚠️ 缺少 LINE 配置，跳過發送通知")
+        return
+
+    endpoint = "https://api.line.me/v2/bot/message/push"
+    headers_line = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+    
+    # 設定通知訊息文字
+    # 💡 這裡可以隨意調整你想要的排版
+    message_text = (
+        f"📊 {result_data['date']} 三大法人籌碼日報\n"
+        f"-------------------\n"
+        f"🏢 外資：{result_data['foreign']} 億\n"
+        f"🏛️ 投信：{result_data['investment']} 億\n"
+        f"⚖️ 自營：{result_data['dealer']} 億\n"
+        f"-------------------\n"
+        f"💰 合計：{result_data['total']} 億\n"
+        f"🔗 網頁：https://candyspydemo-alt.github.io/daily-report/"
+    )
+
+    payload = {
+        "to": user_id,
+        "messages": [
+            {
+                "type": "text",
+                "text": message_text
+            }
+        ]
+    }
+    
+    try:
+        response = requests.post(endpoint, headers=headers_line, json=payload)
+        if response.status_code == 200:
+            print("📱 LINE 通知發送成功！")
+        else:
+            print(f"❌ LINE 通知發送失敗，錯誤碼: {response.status_code}, 內容: {response.text}")
+    except Exception as e:
+        print(f"❌ LINE 發送過程中發生錯誤: {e}")
+
+# 執行發送
+send_line_push(result)
 
 print("done")

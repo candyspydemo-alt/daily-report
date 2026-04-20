@@ -1,10 +1,1267 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>測試成功</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>台股三大法人買賣超追蹤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-elevated: #161b22;
+    --bg-soft: #1c232e;
+    --border: #2a333f;
+    --border-soft: #1f2730;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #6e7681;
+    --accent: #c9a961;       /* 金色 */
+    --accent-dim: #8b7645;
+    --buy: #f87171;          /* 紅 = 買超 (台股習慣) */
+    --sell: #4ade80;         /* 綠 = 賣超 */
+    --buy-soft: rgba(248, 113, 113, 0.12);
+    --sell-soft: rgba(74, 222, 128, 0.12);
+    --neutral: #9ca3af;
+    --radius: 4px;
+    --radius-lg: 8px;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.4);
+    --serif: "Noto Serif TC", "Source Han Serif TC", serif;
+    --sans: "Noto Sans TC", -apple-system, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 1200px 600px at 50% -10%, rgba(201, 169, 97, 0.06), transparent 70%),
+      radial-gradient(ellipse 800px 400px at 100% 50%, rgba(201, 169, 97, 0.03), transparent 70%);
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 28px 80px;
+  }
+
+  /* ====== HEADER ====== */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  header::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -1px;
+    width: 80px; height: 2px;
+    background: var(--accent);
+  }
+  .title-block h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: 34px;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .title-block h1 .accent { color: var(--accent); }
+  .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .header-meta {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .header-meta .label {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .header-meta .value { color: var(--accent); font-weight: 500; }
+
+  /* ====== ACTION BAR ====== */
+  .action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 28px;
+    align-items: center;
+  }
+  .btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 16px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover {
+    background: var(--bg-soft);
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0d1117;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .btn-primary:hover {
+    background: #d9ba76;
+    border-color: #d9ba76;
+    color: #0d1117;
+  }
+  .btn-danger { color: #f87171; }
+  .btn-danger:hover { background: rgba(248,113,113,0.08); border-color: #7f1d1d; color: #fca5a5; }
+
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+  .status-pill.success { color: var(--sell); border-color: rgba(74,222,128,0.3); }
+  .status-pill.error { color: var(--buy); border-color: rgba(248,113,113,0.3); }
+
+  /* ====== TODAY SUMMARY CARDS ====== */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--accent);
+    opacity: 0.5;
+  }
+  .card.buy::before { background: var(--buy); }
+  .card.sell::before { background: var(--sell); }
+  .card.neutral::before { background: var(--neutral); }
+
+  .card .card-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .card .card-value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .card .card-value .unit {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-left: 4px;
+    font-weight: 400;
+  }
+  .card .card-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+  .val-buy { color: var(--buy); }
+  .val-sell { color: var(--sell); }
+  .val-neutral { color: var(--neutral); }
+
+  /* ====== SECTION TITLES ====== */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    margin-top: 10px;
+  }
+  .section-title h2 {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .section-title .rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--border), transparent);
+  }
+  .section-title .count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* ====== HISTORY TABLE ====== */
+  .table-wrap {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .table-scroll { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  thead tr {
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    text-align: right;
+    padding: 12px 14px;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    text-align: right;
+    white-space: nowrap;
+  }
+  td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: var(--bg-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  td .tiny { color: var(--text-dim); font-size: 11px; margin-left: 4px; }
+  td.highlight { background: rgba(201, 169, 97, 0.06); }
+
+  .empty-state {
+    padding: 56px 24px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .empty-state .icon {
+    font-size: 42px;
+    color: var(--accent-dim);
+    margin-bottom: 14px;
+    font-family: var(--serif);
+  }
+  .empty-state p { font-size: 14px; margin-bottom: 6px; }
+  .empty-state .hint { font-size: 12px; color: var(--text-dim); }
+
+  /* ====== INPUT FORM ====== */
+  .input-panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 36px;
+  }
+  .input-panel h3 {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .input-panel .desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .input-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .input-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    border-radius: var(--radius);
+    transition: border-color 0.15s;
+  }
+  .input-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .input-group input::placeholder { color: var(--text-dim); }
+
+  .paste-area {
+    width: 100%;
+    min-height: 100px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    border-radius: var(--radius);
+    resize: vertical;
+    margin-bottom: 12px;
+  }
+  .paste-area:focus { outline: none; border-color: var(--accent); }
+
+  .form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .tip-box {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: rgba(201, 169, 97, 0.05);
+    border-left: 2px solid var(--accent);
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .tip-box strong { color: var(--accent); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 10px 16px;
+    font-family: var(--sans);
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ====== CHART ====== */
+  .chart-wrap {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 36px;
+  }
+  .chart-wrap .chart-title {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .chart-wrap .chart-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 14px;
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* Delete button in rows */
+  .row-delete {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 14px;
+    border-radius: 2px;
+    transition: all 0.15s;
+    font-family: var(--mono);
+  }
+  .row-delete:hover {
+    color: var(--buy);
+    background: rgba(248,113,113,0.08);
+  }
+
+  footer {
+    text-align: center;
+    padding-top: 40px;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .container { padding: 20px 16px 60px; }
+    .title-block h1 { font-size: 26px; }
+    header { flex-direction: column; align-items: flex-start; }
+    .header-meta { text-align: left; }
+    .card .card-value { font-size: 22px; }
+    th, td { padding: 10px 8px; font-size: 11px; }
+  }
+
+  /* Animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card, .table-wrap, .input-panel, .chart-wrap {
+    animation: fadeInUp 0.4s ease backwards;
+  }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.10s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4) { animation-delay: 0.20s; }
+</style>
 </head>
 <body>
-  <h1>🎉 成功了！GitHub Pages 有正常顯示</h1>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="title-block">
+      <h1>台股三大法人<span class="accent">買賣超</span>追蹤</h1>
+      <div class="subtitle">Institutional Investors Net Position — TWSE</div>
+    </div>
+    <div class="header-meta">
+      <div><span class="label">Updated</span> <span class="value" id="lastUpdated">—</span></div>
+      <div><span class="label">Records</span> <span class="value" id="recordCount">0</span> 筆</div>
+      <div><span class="label">Source</span> <span class="value">TWSE BFI82U</span></div>
+    </div>
+  </header>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="tryAutoFetch()" id="btnFetch">
+      ⟳ 自動抓取今日資料
+    </button>
+    <button class="btn" onclick="showTab('input')">＋ 手動輸入 / 貼上</button>
+    <button class="btn" onclick="exportData()">↓ 匯出 JSON</button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">↑ 匯入 JSON</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+    <button class="btn btn-danger" onclick="confirmClear()">⎌ 清空所有資料</button>
+    <span class="status-pill" id="statusPill">就緒</span>
+  </div>
+
+  <!-- TODAY SUMMARY -->
+  <div class="section-title">
+    <h2>最新交易日 <span id="latestDateLabel" style="font-family:var(--mono); font-size:14px; color:var(--accent); font-weight:400; margin-left:8px;"></span></h2>
+    <div class="rule"></div>
+  </div>
+  <div class="summary-grid" id="summaryGrid">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div id="tab-input" class="input-panel" style="display:none;">
+    <h3>新增／更新 交易日資料</h3>
+    <p class="desc">
+      若自動抓取失敗，您可以在此手動輸入當日三大法人買賣超金額（單位：億元）。
+      同一日期重複輸入會覆蓋舊資料。
+    </p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchInputTab('form', event)">表單輸入</button>
+      <button class="tab" onclick="switchInputTab('paste', event)">貼上 PTT 文字</button>
+    </div>
+
+    <!-- Form Input -->
+    <div id="inputTab-form" class="tab-content active">
+      <div class="input-grid">
+        <div class="input-group">
+          <label>日期</label>
+          <input type="date" id="inDate" />
+        </div>
+        <div class="input-group">
+          <label>自營商 (億元)</label>
+          <input type="number" id="inDealer" step="0.01" placeholder="如: -53.90" />
+        </div>
+        <div class="input-group">
+          <label>投信 (億元)</label>
+          <input type="number" id="inTrust" step="0.01" placeholder="如: -91.25" />
+        </div>
+        <div class="input-group">
+          <label>外資 (億元)</label>
+          <input type="number" id="inForeign" step="0.01" placeholder="如: +557.10" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="saveFromForm()">儲存</button>
+        <button class="btn" onclick="hideTab('input')">取消</button>
+      </div>
+      <div class="tip-box">
+        <strong>提示：</strong>自營商欄位請輸入「自營商(自行買賣)＋自營商(避險)」的合計買賣差額。
+        買超為正值、賣超為負值（可直接貼入 +/- 符號，也可不寫）。
+      </div>
+    </div>
+
+    <!-- Paste PTT -->
+    <div id="inputTab-paste" class="tab-content">
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label>日期 (必填)</label>
+        <input type="date" id="pasteDate" />
+      </div>
+      <textarea class="paste-area" id="pasteArea" placeholder="貼上 PTT 或證交所的三大法人買賣金額統計表原文，程式會自動解析。例如：
+
+自營商(自行買賣)    82.58         130.64           -48.06
+自營商(避險)       356.19         362.04            -5.84
+投  信             127.06         218.32           -91.25
+外資及陸資        4011.19        3454.09          +557.10"></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="saveFromPaste()">解析並儲存</button>
+        <button class="btn" onclick="hideTab('input')">取消</button>
+      </div>
+      <div class="tip-box">
+        <strong>小技巧：</strong>可至 PTT Stock 板搜尋「三大法人買賣金額統計表」，直接複製內文貼上。
+        程式會自動抓取各項數字。
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div id="chartWrap" class="chart-wrap" style="display:none;">
+    <div class="chart-title">近期買賣超趨勢</div>
+    <div class="chart-desc">正值為買超、負值為賣超（單位：億元）</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background: var(--buy);"></div>外資</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--accent);"></div>投信</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div>自營商</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--text-muted);"></div>合計</div>
+    </div>
+    <div id="chartContainer"></div>
+  </div>
+
+  <!-- HISTORY TABLE -->
+  <div class="section-title">
+    <h2>歷史紀錄</h2>
+    <div class="rule"></div>
+    <span class="count" id="historyCount">0 筆</span>
+  </div>
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>星期</th>
+            <th>外資</th>
+            <th>投信</th>
+            <th>自營商</th>
+            <th>合計</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <!-- filled by JS -->
+        </tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="icon">◇</div>
+      <p>尚無歷史紀錄</p>
+      <p class="hint">點擊上方「自動抓取」或「手動輸入」新增第一筆資料</p>
+    </div>
+  </div>
+
+  <footer>
+    資料來源：臺灣證券交易所 OpenAPI &nbsp;|&nbsp; 買賣超單位：新台幣億元<br/>
+    本頁資料儲存於瀏覽器 localStorage，清除瀏覽資料會遺失紀錄，請定期匯出 JSON 備份
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+ * 台股三大法人買賣超追蹤 — 核心邏輯
+ * ========================================================= */
+
+const STORAGE_KEY = "tw_institutional_data_v1";
+
+// ---- 資料模型 ----
+// records = { "2026-04-15": { date: "2026-04-15", dealer: -53.90, trust: -91.25, foreign: 557.10, total: 411.93, savedAt: ISO } }
+
+let records = loadRecords();
+
+// 預設種子資料（使用者首次打開時，自動填入 4/15、4/16 已知數字）
+// 資料來源：臺灣證券交易所 BFI82U
+// 4/13, 4/14 採用 HiStock (histock.tw) 4/15 抓取的修正版數字
+// 4/15 採用 PTT + 經濟日報 + stock.may.tw 三方驗證一致的數字
+// 4/16 採用使用者自證交所官網確認的數字
+const SEED_DATA = [
+  {
+    date: "2026-04-13",
+    dealer_self: 33.58,              // (HiStock 修正版)
+    dealer_hedge: 6.31,              // 合計 +39.89
+    trust: 60.50,                    // (HiStock 修正版，較 PTT -71.36 已修正)
+    foreign: -161.79,                // (HiStock 修正版)
+    total: -61.41
+  },
+  {
+    date: "2026-04-14",
+    dealer_self: -1.99,
+    dealer_hedge: 57.20,             // 合計 +55.21
+    trust: -59.98,                   // (HiStock 修正版，較 PTT -56.65 已修正)
+    foreign: 689.08,                 // (HiStock 修正版)
+    total: 684.31
+  },
+  {
+    date: "2026-04-15",
+    dealer_self: -48.06,
+    dealer_hedge: -5.84,             // 合計 -53.90
+    trust: -91.25,                   // (PTT+經濟日報+stock.may.tw 三方一致)
+    foreign: 557.10,
+    total: 411.93
+  },
+  {
+    date: "2026-04-16",
+    dealer_self: 0,
+    dealer_hedge: 118.45,            // 合計 +118.45 (使用者自證交所官網確認)
+    trust: -27.42,                   // (使用者自證交所官網確認，較 PTT -43.30 已修正)
+    foreign: 440.08,
+    total: 531.11
+  }
+];
+
+function seedIfEmpty() {
+  if (Object.keys(records).length === 0) {
+    SEED_DATA.forEach(d => {
+      const dealer = +(d.dealer_self + d.dealer_hedge).toFixed(2);
+      records[d.date] = {
+        date: d.date,
+        dealer: dealer,
+        trust: d.trust,
+        foreign: d.foreign,
+        total: d.total,
+        savedAt: new Date().toISOString()
+      };
+    });
+    saveRecords();
+  }
+}
+
+function loadRecords() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+
+function saveRecords() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+
+// ---- 工具函式 ----
+function fmtNum(n, showSign = true) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  const sign = n > 0 ? "+" : "";
+  return (showSign ? sign : "") + n.toFixed(2);
+}
+function fmtDateSlash(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}/${m}/${dd}`;
+}
+function weekdayZH(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  return ["日","一","二","三","四","五","六"][d.getDay()];
+}
+function valClass(n) {
+  if (n === null || n === undefined || isNaN(n)) return "val-neutral";
+  if (n > 0) return "val-buy";
+  if (n < 0) return "val-sell";
+  return "val-neutral";
+}
+function setStatus(text, type = "") {
+  const pill = document.getElementById("statusPill");
+  pill.textContent = text;
+  pill.className = "status-pill" + (type ? " " + type : "");
+}
+
+// ---- 主要渲染 ----
+function render() {
+  const sorted = Object.values(records).sort((a, b) => b.date.localeCompare(a.date));
+
+  document.getElementById("recordCount").textContent = sorted.length;
+  document.getElementById("historyCount").textContent = sorted.length + " 筆";
+
+  if (sorted.length === 0) {
+    document.getElementById("summaryGrid").innerHTML = `
+      <div class="card neutral"><div class="card-label">尚無資料</div>
+      <div class="card-value val-neutral">—</div>
+      <div class="card-sub">請新增第一筆紀錄</div></div>`;
+    document.getElementById("latestDateLabel").textContent = "";
+    document.getElementById("lastUpdated").textContent = "—";
+    document.getElementById("historyBody").innerHTML = "";
+    document.getElementById("emptyState").style.display = "block";
+    document.getElementById("chartWrap").style.display = "none";
+    return;
+  }
+
+  document.getElementById("emptyState").style.display = "none";
+
+  // 最新一天的卡片
+  const latest = sorted[0];
+  document.getElementById("latestDateLabel").textContent =
+    `${fmtDateSlash(latest.date)} (週${weekdayZH(latest.date)})`;
+  document.getElementById("lastUpdated").textContent = fmtDateSlash(latest.date);
+
+  document.getElementById("summaryGrid").innerHTML = `
+    <div class="card ${latest.foreign >= 0 ? 'buy' : 'sell'}">
+      <div class="card-label">外資及陸資</div>
+      <div class="card-value ${valClass(latest.foreign)}">${fmtNum(latest.foreign)}<span class="unit">億</span></div>
+      <div class="card-sub">${latest.foreign >= 0 ? '買超' : '賣超'}</div>
+    </div>
+    <div class="card ${latest.trust >= 0 ? 'buy' : 'sell'}">
+      <div class="card-label">投信</div>
+      <div class="card-value ${valClass(latest.trust)}">${fmtNum(latest.trust)}<span class="unit">億</span></div>
+      <div class="card-sub">${latest.trust >= 0 ? '買超' : '賣超'}</div>
+    </div>
+    <div class="card ${latest.dealer >= 0 ? 'buy' : 'sell'}">
+      <div class="card-label">自營商</div>
+      <div class="card-value ${valClass(latest.dealer)}">${fmtNum(latest.dealer)}<span class="unit">億</span></div>
+      <div class="card-sub">自行買賣＋避險</div>
+    </div>
+    <div class="card ${latest.total >= 0 ? 'buy' : 'sell'}">
+      <div class="card-label">三大法人合計</div>
+      <div class="card-value ${valClass(latest.total)}">${fmtNum(latest.total)}<span class="unit">億</span></div>
+      <div class="card-sub">${latest.total >= 0 ? '整體買超' : '整體賣超'}</div>
+    </div>
+  `;
+
+  // 歷史表
+  document.getElementById("historyBody").innerHTML = sorted.map((r, i) => `
+    <tr>
+      <td>${fmtDateSlash(r.date)}</td>
+      <td style="color: var(--text-muted);">週${weekdayZH(r.date)}</td>
+      <td class="${valClass(r.foreign)}">${fmtNum(r.foreign)}</td>
+      <td class="${valClass(r.trust)}">${fmtNum(r.trust)}</td>
+      <td class="${valClass(r.dealer)}">${fmtNum(r.dealer)}</td>
+      <td class="${valClass(r.total)}" style="font-weight:700;">${fmtNum(r.total)}</td>
+      <td><button class="row-delete" onclick="deleteRecord('${r.date}')" title="刪除此筆">✕</button></td>
+    </tr>
+  `).join("");
+
+  // 圖表
+  renderChart(sorted.slice(0, 30).reverse());
+}
+
+function renderChart(data) {
+  if (data.length < 2) {
+    document.getElementById("chartWrap").style.display = "none";
+    return;
+  }
+  document.getElementById("chartWrap").style.display = "block";
+
+  const w = 1200, h = 280, pad = { top: 20, right: 20, bottom: 40, left: 50 };
+  const iw = w - pad.left - pad.right, ih = h - pad.top - pad.bottom;
+
+  // 找最大絕對值決定刻度
+  let maxVal = 0;
+  data.forEach(d => {
+    maxVal = Math.max(maxVal, Math.abs(d.foreign), Math.abs(d.trust), Math.abs(d.dealer), Math.abs(d.total));
+  });
+  maxVal = Math.ceil(maxVal / 100) * 100 || 100;
+
+  const barW = iw / data.length;
+  const barGroupW = barW * 0.8;
+  const subBarW = barGroupW / 4;
+
+  const yScale = v => pad.top + ih/2 - (v / maxVal) * (ih/2);
+  const zeroY = pad.top + ih/2;
+
+  const series = [
+    { key: 'foreign', color: 'var(--buy)', label: '外資' },
+    { key: 'trust',   color: 'var(--accent)', label: '投信' },
+    { key: 'dealer',  color: '#60a5fa', label: '自營商' },
+    { key: 'total',   color: 'var(--text-muted)', label: '合計' }
+  ];
+
+  // Y軸標籤
+  const yTicks = [maxVal, maxVal/2, 0, -maxVal/2, -maxVal];
+
+  let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="max-width:100%;">`;
+
+  // zero line
+  svg += `<line x1="${pad.left}" x2="${w - pad.right}" y1="${zeroY}" y2="${zeroY}" stroke="var(--border)" stroke-width="1"/>`;
+
+  // Y grid
+  yTicks.forEach(t => {
+    const y = yScale(t);
+    svg += `<line x1="${pad.left}" x2="${w - pad.right}" y1="${y}" y2="${y}" stroke="var(--border-soft)" stroke-width="1" stroke-dasharray="2,4"/>`;
+    svg += `<text x="${pad.left - 6}" y="${y + 3}" text-anchor="end" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${t >= 0 ? '+' : ''}${t}</text>`;
+  });
+
+  // Bars
+  data.forEach((d, i) => {
+    const gx = pad.left + i * barW + (barW - barGroupW) / 2;
+    series.forEach((s, si) => {
+      const v = d[s.key];
+      const bx = gx + si * subBarW;
+      const by = v >= 0 ? yScale(v) : zeroY;
+      const bh = Math.abs(yScale(v) - zeroY);
+      svg += `<rect x="${bx}" y="${by}" width="${subBarW - 1}" height="${bh}" fill="${s.color}" opacity="0.85">
+        <title>${fmtDateSlash(d.date)} ${s.label}: ${fmtNum(v)} 億</title>
+      </rect>`;
+    });
+
+    // X axis label (only every few)
+    if (data.length <= 10 || i % Math.ceil(data.length / 10) === 0 || i === data.length - 1) {
+      const md = d.date.slice(5).replace("-", "/");
+      svg += `<text x="${gx + barGroupW/2}" y="${h - pad.bottom + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10" font-family="var(--mono)">${md}</text>`;
+    }
+  });
+
+  svg += `</svg>`;
+  document.getElementById("chartContainer").innerHTML = svg;
+}
+
+// ---- 儲存／刪除 ----
+function upsertRecord(date, dealer, trust, foreign, total) {
+  const rec = {
+    date,
+    dealer: round2(dealer),
+    trust: round2(trust),
+    foreign: round2(foreign),
+    total: total !== undefined && total !== null ? round2(total) : round2(dealer + trust + foreign),
+    savedAt: new Date().toISOString()
+  };
+  records[date] = rec;
+  saveRecords();
+  render();
+  setStatus(`已儲存 ${fmtDateSlash(date)}`, "success");
+  return rec;
+}
+function round2(n) { return Math.round(n * 100) / 100; }
+
+function deleteRecord(date) {
+  if (!confirm(`確定要刪除 ${fmtDateSlash(date)} 的紀錄嗎？`)) return;
+  delete records[date];
+  saveRecords();
+  render();
+  setStatus(`已刪除 ${fmtDateSlash(date)}`);
+}
+
+function confirmClear() {
+  if (!confirm("確定要清空所有歷史紀錄嗎？此動作無法復原。\n\n建議先匯出 JSON 備份。")) return;
+  records = {};
+  saveRecords();
+  render();
+  setStatus("已清空所有資料");
+}
+
+// ---- 表單儲存 ----
+function saveFromForm() {
+  const date = document.getElementById("inDate").value;
+  const dealer = parseFloat(document.getElementById("inDealer").value);
+  const trust = parseFloat(document.getElementById("inTrust").value);
+  const foreign = parseFloat(document.getElementById("inForeign").value);
+
+  if (!date) { alert("請選擇日期"); return; }
+  if (isNaN(dealer) || isNaN(trust) || isNaN(foreign)) {
+    alert("請輸入三個法人的買賣超金額"); return;
+  }
+  upsertRecord(date, dealer, trust, foreign);
+  hideTab('input');
+  // clear
+  document.getElementById("inDealer").value = "";
+  document.getElementById("inTrust").value = "";
+  document.getElementById("inForeign").value = "";
+}
+
+// ---- 貼上解析 (PTT/TWSE 格式) ----
+function saveFromPaste() {
+  const date = document.getElementById("pasteDate").value;
+  const text = document.getElementById("pasteArea").value;
+  if (!date) { alert("請選擇日期"); return; }
+  if (!text.trim()) { alert("請貼上內容"); return; }
+
+  const parsed = parsePTTText(text);
+  if (!parsed) {
+    alert("無法解析貼上的文字，請檢查格式或改用表單輸入。\n\n支援格式：包含「自營商(自行買賣)」「自營商(避險)」「投信」「外資及陸資」等關鍵字的表格。");
+    return;
+  }
+  upsertRecord(date, parsed.dealer, parsed.trust, parsed.foreign, parsed.total);
+  hideTab('input');
+  document.getElementById("pasteArea").value = "";
+}
+
+// 從 PTT 貼文中解析三大法人數字
+function parsePTTText(text) {
+  // 移除多餘空白並分行
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  const result = {
+    dealer_self: null, dealer_hedge: null,
+    trust: null, foreign: null, total: null
+  };
+
+  // 用於解析一行末尾數字 (可帶 +/-)
+  // 抓「最後一個」數字 = 買賣差額
+  const extractLastNumber = (line) => {
+    const nums = line.match(/[+-]?\s*\d+(?:\.\d+)?/g);
+    if (!nums || nums.length === 0) return null;
+    // 取最後一個且該行至少要有 2 個以上的數字 (買進/賣出/差額)
+    // 若只有 1 個，也接受
+    const cleaned = nums.map(n => parseFloat(n.replace(/\s+/g, "")));
+    return cleaned[cleaned.length - 1];
+  };
+
+  for (const line of lines) {
+    if (line.includes("自營商") && (line.includes("自行買賣") || line.includes("自行"))) {
+      result.dealer_self = extractLastNumber(line);
+    } else if (line.includes("自營商") && line.includes("避險")) {
+      result.dealer_hedge = extractLastNumber(line);
+    } else if (line.includes("投") && line.includes("信")) {
+      result.trust = extractLastNumber(line);
+    } else if (line.includes("外資") && line.includes("陸資")) {
+      result.foreign = extractLastNumber(line);
+    } else if (line.includes("合") && line.includes("計")) {
+      result.total = extractLastNumber(line);
+    }
+  }
+
+  // 驗證：外資、投信 必須有；自營商兩個其中一個有即可
+  if (result.foreign === null || result.trust === null) return null;
+  if (result.dealer_self === null && result.dealer_hedge === null) return null;
+
+  const dealer = (result.dealer_self || 0) + (result.dealer_hedge || 0);
+
+  return {
+    dealer: round2(dealer),
+    trust: result.trust,
+    foreign: result.foreign,
+    total: result.total
+  };
+}
+
+// ---- 自動抓取 (嘗試多個 CORS proxy) ----
+async function tryAutoFetch() {
+  const btn = document.getElementById("btnFetch");
+  btn.disabled = true;
+  btn.textContent = "⟳ 抓取中...";
+  setStatus("準備連線證交所...", "");
+
+  // 今天日期 (用於 TWSE rwd API)
+  const today = new Date();
+  const yyyymmdd = today.getFullYear()
+    + String(today.getMonth() + 1).padStart(2, "0")
+    + String(today.getDate()).padStart(2, "0");
+
+  // 兩個 API 端點：
+  // 1. rwd: 官方網頁用的 API，可指定日期，資料較新 (支援修正)
+  // 2. openapi: OpenAPI 開放資料，只有最新一天
+  const apiUrls = [
+    {
+      url: `https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=${yyyymmdd}&type=day&response=json`,
+      type: "rwd",
+      label: "TWSE 官方 API"
+    },
+    {
+      url: "https://openapi.twse.com.tw/v1/fund/BFI82U",
+      type: "openapi",
+      label: "TWSE OpenAPI"
+    }
+  ];
+
+  // CORS proxy 清單 (越多越穩)
+  const proxies = [
+    { name: "corsproxy.io",   build: u => "https://corsproxy.io/?" + encodeURIComponent(u) },
+    { name: "allorigins.win", build: u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u) },
+    { name: "codetabs.com",   build: u => "https://api.codetabs.com/v1/proxy?quest=" + u },
+    { name: "cors.lol",       build: u => "https://api.cors.lol/?url=" + encodeURIComponent(u) },
+    { name: "thingproxy",     build: u => "https://thingproxy.freeboard.io/fetch/" + u },
+    { name: "crossorigin.me", build: u => "https://cors-anywhere.herokuapp.com/" + u },
+    { name: "cors.sh",        build: u => "https://proxy.cors.sh/" + u },
+    { name: "cors.x2u.in",    build: u => "https://cors.x2u.in/" + u }
+  ];
+
+  // 嘗試特定 proxy + 特定 API 端點，帶 10 秒逾時
+  async function attempt(proxy, apiDef) {
+    const proxyUrl = proxy.build(apiDef.url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    try {
+      const resp = await fetch(proxyUrl, {
+        cache: "no-store",
+        signal: controller.signal,
+        headers: { "Accept": "application/json" }
+      });
+      clearTimeout(timeoutId);
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const text = await resp.text();
+      if (!text || text.length < 20) throw new Error("空回應");
+      const data = JSON.parse(text);
+      return { data, type: apiDef.type };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
+  }
+
+  // 嘗試所有組合 (proxy × API)，直到成功
+  let result = null, attemptLog = [];
+  outer:
+  for (const apiDef of apiUrls) {
+    for (const proxy of proxies) {
+      const tag = `${proxy.name} × ${apiDef.label}`;
+      setStatus(`嘗試 ${tag}...`, "");
+      try {
+        const r = await attempt(proxy, apiDef);
+        // 驗證資料格式
+        if (r.type === "rwd") {
+          if (r.data && r.data.stat === "OK" && Array.isArray(r.data.data) && r.data.data.length > 0) {
+            result = r;
+            attemptLog.push(`✓ ${tag}`);
+            break outer;
+          }
+          throw new Error(r.data?.stat || "資料格式異常");
+        } else {
+          if (Array.isArray(r.data) && r.data.length > 0) {
+            result = r;
+            attemptLog.push(`✓ ${tag}`);
+            break outer;
+          }
+          throw new Error("OpenAPI 回傳空陣列");
+        }
+      } catch (e) {
+        attemptLog.push(`✗ ${tag}: ${e.message}`);
+        // 繼續嘗試下一個
+      }
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = "⟳ 自動抓取今日資料";
+
+  if (!result) {
+    console.log("自動抓取嘗試紀錄:\n" + attemptLog.join("\n"));
+    setStatus("自動抓取失敗", "error");
+    const shouldOpenTWSE = confirm(
+      "自動抓取失敗（所有 CORS proxy 都無法連線）。\n\n" +
+      "這通常是因為免費 proxy 服務當機或被擋。\n" +
+      "（詳細錯誤已輸出至瀏覽器 Console，按 F12 可查看）\n\n" +
+      "點「確定」將自動開啟證交所官網，您可抄下數字後用「手動輸入」填入。\n" +
+      "點「取消」留在此頁不做任何事。"
+    );
+    if (shouldOpenTWSE) {
+      window.open("https://www.twse.com.tw/zh/trading/foreign/bfi82u.html", "_blank");
+    }
+    return;
+  }
+
+  // === 解析成功的資料 ===
+  try {
+    const items = { dealer_self: 0, dealer_hedge: 0, trust: 0, foreign: 0, total: 0 };
+    let isoDate = null;
+
+    if (result.type === "rwd") {
+      // rwd API 格式：{ stat, title, date: "20260417", fields: [...], data: [[單位名稱, 買進, 賣出, 差額], ...] }
+      const rawDate = result.data.date;  // e.g. "20260417"
+      if (rawDate && rawDate.length === 8) {
+        isoDate = `${rawDate.slice(0,4)}-${rawDate.slice(4,6)}-${rawDate.slice(6,8)}`;
+      }
+      // 從 title 解析日期 (備援，民國年格式)
+      if (!isoDate && result.data.title) {
+        const m = result.data.title.match(/(\d{2,3})年(\d{1,2})月(\d{1,2})日/);
+        if (m) {
+          const y = parseInt(m[1]) + 1911;
+          isoDate = `${y}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+        }
+      }
+      // 解析每列
+      result.data.data.forEach(row => {
+        if (!Array.isArray(row) || row.length < 4) return;
+        const name = String(row[0]).replace(/[\s\u3000]/g, "");
+        const diffStr = String(row[3]).replace(/,/g, "").replace(/\+/g, "");
+        const diff = parseFloat(diffStr) / 1e8;  // 元 → 億
+        if (isNaN(diff)) return;
+        if (name.includes("自營商") && name.includes("自行買賣")) items.dealer_self = diff;
+        else if (name.includes("自營商") && name.includes("避險")) items.dealer_hedge = diff;
+        else if (name.includes("投信")) items.trust = diff;
+        else if (name.includes("外資") && name.includes("陸資")) items.foreign = diff;
+        else if (name.includes("合計")) items.total = diff;
+      });
+    } else {
+      // openapi 格式：[{日期, 單位名稱, 買進金額, 賣出金額, 買賣差額}, ...]
+      let dateROC = null;
+      result.data.forEach(row => {
+        if (row["日期"]) dateROC = row["日期"];
+        const name = String(row["單位名稱"] || "").replace(/\s/g, "");
+        const diff = parseFloat(row["買賣差額"]) / 1e8;
+        if (isNaN(diff)) return;
+        if (name.includes("自營商") && name.includes("自行買賣")) items.dealer_self = diff;
+        else if (name.includes("自營商") && name.includes("避險")) items.dealer_hedge = diff;
+        else if (name.includes("投信")) items.trust = diff;
+        else if (name.includes("外資") && name.includes("陸資")) items.foreign = diff;
+        else if (name.includes("合計")) items.total = diff;
+      });
+      if (dateROC && dateROC.length === 7) {
+        // ROC: 1150417 → 2026-04-17
+        const y = parseInt(dateROC.slice(0, 3)) + 1911;
+        isoDate = `${y}-${dateROC.slice(3,5)}-${dateROC.slice(5,7)}`;
+      }
+    }
+
+    if (!isoDate) throw new Error("無法解析日期");
+
+    const dealer = items.dealer_self + items.dealer_hedge;
+    const total = items.total || (dealer + items.trust + items.foreign);
+
+    upsertRecord(isoDate, dealer, items.trust, items.foreign, total);
+    setStatus(`✓ 成功抓取 ${fmtDateSlash(isoDate)}`, "success");
+    console.log("嘗試紀錄:\n" + attemptLog.join("\n"));
+  } catch (e) {
+    setStatus("資料解析失敗", "error");
+    console.error(e, result);
+    alert("抓取到資料但解析失敗：" + e.message + "\n（詳細資料在 Console，按 F12 查看）");
+  }
+}
+
+// ---- 匯入 / 匯出 ----
+function exportData() {
+  const data = JSON.stringify(records, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const today = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `tw_institutional_${today}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  setStatus("已匯出 JSON 備份", "success");
+}
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (typeof imported !== 'object') throw new Error("格式錯誤");
+      let count = 0;
+      for (const [k, v] of Object.entries(imported)) {
+        if (v && typeof v === 'object' && v.date) {
+          records[k] = v;
+          count++;
+        }
+      }
+      saveRecords();
+      render();
+      setStatus(`已匯入 ${count} 筆資料`, "success");
+    } catch (err) {
+      alert("匯入失敗：" + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+// ---- Tab 控制 ----
+function showTab(id) {
+  document.getElementById("tab-" + id).style.display = "block";
+  document.getElementById("tab-" + id).scrollIntoView({behavior: "smooth", block: "center"});
+  // 預設日期為今天
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("inDate").value = today;
+  document.getElementById("pasteDate").value = today;
+}
+function hideTab(id) {
+  document.getElementById("tab-" + id).style.display = "none";
+}
+function switchInputTab(name, ev) {
+  document.querySelectorAll("#tab-input .tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll("#tab-input .tab-content").forEach(t => t.classList.remove("active"));
+  ev.target.classList.add("active");
+  document.getElementById("inputTab-" + name).classList.add("active");
+}
+
+// ---- Init ----
+seedIfEmpty();
+render();
+</script>
 </body>
 </html>

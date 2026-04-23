@@ -1,23 +1,23 @@
 name: Daily Stock Fetch
 
 on:
-schedule:
+  schedule:
     # 台灣時間 15:10 (嘗試第一次)
     - cron: '10 7 * * 1-5'
     # 台灣時間 15:40 (如果前一個還沒跑，這是一個補丁)
     - cron: '40 7 * * 1-5'
     # 台灣時間 16:10 (最後保險)
     - cron: '10 8 * * 1-5'
-  workflow_dispatch: # 保留手動按鈕
+  workflow_dispatch: # ✅ 這裡原本縮排太進去了，已修復
 
 permissions:
-  contents: write         # 允許 Action 推播 data.json 回倉庫
+  contents: write
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 消除 Node.js 20 棄用警告
+    # ⚠️ 建議先移除 FORCE_JAVASCRIPT_ACTIONS_TO_NODE24，目前 GitHub 預設環境穩定
+    # 若一定要加，縮排需與 runs-on 對齊
 
     steps:
       - name: Checkout
@@ -33,7 +33,6 @@ jobs:
 
       - name: Run script
         env:
-          # 💡 重要：將你設定的 Secrets 傳遞給 fetch.py 使用
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: python fetch.py
@@ -43,5 +42,6 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json
+          # ✅ commit 後面加上 || exit 0 是對的，防止沒資料更新時報錯
           git commit -m "自動更新今日籌碼: $(date +'%Y-%m-%d')" || exit 0
           git push

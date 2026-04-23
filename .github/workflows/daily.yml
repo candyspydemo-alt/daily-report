@@ -1,11 +1,14 @@
 name: Daily Stock Fetch
 
 on:
-  schedule:
- # 建議設定 UTC 07:12 (台灣時間 15:12)
-    # 避開 07:00 或 07:30 這種熱門大塞車時段
-    - cron: '12 7 * * 1-5'
-  workflow_dispatch:      # 讓你可以手動點擊執行測試
+schedule:
+    # 台灣時間 15:10 (嘗試第一次)
+    - cron: '10 7 * * 1-5'
+    # 台灣時間 15:40 (如果前一個還沒跑，這是一個補丁)
+    - cron: '40 7 * * 1-5'
+    # 台灣時間 16:10 (最後保險)
+    - cron: '10 8 * * 1-5'
+  workflow_dispatch: # 保留手動按鈕
 
 permissions:
   contents: write         # 允許 Action 推播 data.json 回倉庫

@@ -1,9 +1,9 @@
 {
-  "date": "2026-04-23",
-  "dealer_self": -5.9,
-  "dealer_hedge": 13.28,
-  "investment": 37.13,
-  "foreign_ex": 116.09,
+  "date": "2026-04-24",
+  "dealer_self": 85.84,
+  "dealer_hedge": 2.95,
+  "investment": 18.0,
+  "foreign_ex": 439.08,
   "foreign_dealer": 0.0,
-  "total": 160.61
+  "total": 545.87
 }
